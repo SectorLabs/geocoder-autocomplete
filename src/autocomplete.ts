@@ -173,7 +173,7 @@ export class GeocoderAutocomplete {
         }
 
         if (operation === 'focus' && this.focusChangeCallbacks.indexOf(callback) < 0) {
-            this.focusChangeCallbacks.splice(this.suggestionsChangeCallbacks.indexOf(callback), 1);
+            this.focusChangeCallbacks.splice(this.focusChangeCallbacks.indexOf(callback), 1);
         }
     }
 
