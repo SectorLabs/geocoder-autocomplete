@@ -25,6 +25,7 @@ export class GeocoderAutocomplete {
     private changeCallbacks: ((selectedOption: any) => any)[] = [];
     private suggestionsChangeCallbacks: ((options: any[]) => any)[] = [];
     private focusChangeCallbacks: ((options?: any) => any)[] = [];
+    private blurChangeCallbacks: ((options?: any) => any)[] = [];
 
     private geocoderUrl = "https://api.geoapify.com/v1/geocode/autocomplete";
     private placeDetailsUrl = "https://api.geoapify.com/v2/place-details";
@@ -70,6 +71,7 @@ export class GeocoderAutocomplete {
         this.inputElement.addEventListener('input', this.onUserInput.bind(this), false);
         this.inputElement.addEventListener('keydown', this.onUserKeyPress.bind(this), false);
         this.inputElement.addEventListener('focus', this.onUserFocus.bind(this), false);
+        this.inputElement.addEventListener('blur', this.onUserBlur.bind(this), false);
 
         document.addEventListener("click", (event) => {
             if (event.target !== this.inputElement) {
@@ -149,7 +151,7 @@ export class GeocoderAutocomplete {
         this.options.bias = {};
     }
 
-    public on(operation: 'select' | 'suggestions' | 'focus', callback: (param: any) => any) {
+    public on(operation: Operation, callback: (param: any) => any) {
         if (operation === 'select' && this.changeCallbacks.indexOf(callback) < 0) {
             this.changeCallbacks.push(callback);
         }
@@ -161,9 +163,13 @@ export class GeocoderAutocomplete {
         if (operation === 'focus' && this.focusChangeCallbacks.indexOf(callback) < 0) {
             this.focusChangeCallbacks.push(callback);
         }
+
+        if (operation === 'blur' && this.focusChangeCallbacks.indexOf(callback) < 0) {
+            this.blurChangeCallbacks.push(callback);
+        }
     }
 
-    public off(operation: 'select' | 'suggestions' | 'focus', callback: (param: any) => any) {
+    public off(operation: Operation, callback: (param: any) => any) {
         if (operation === 'select' && this.changeCallbacks.indexOf(callback) >= 0) {
             this.changeCallbacks.splice(this.changeCallbacks.indexOf(callback), 1);
         }
@@ -175,10 +181,27 @@ export class GeocoderAutocomplete {
         if (operation === 'focus' && this.focusChangeCallbacks.indexOf(callback) < 0) {
             this.focusChangeCallbacks.splice(this.focusChangeCallbacks.indexOf(callback), 1);
         }
+
+        if (operation === 'blur' && this.blurChangeCallbacks.indexOf(callback) < 0) {
+            this.blurChangeCallbacks.splice(this.blurChangeCallbacks.indexOf(callback), 1);
+        }
     }
 
     onUserFocus() { 
         this.focusChangeCallbacks.forEach(callback => callback());
+    }
+
+    onUserBlur() {
+        this.blurChangeCallbacks.forEach(callback => callback());
+
+        // Close the dropdown and stop the previous request
+        this.closeDropDownList();
+        if (this.currentPromiseReject) {
+            this.currentPromiseReject({
+                canceled: true
+            });
+            this.currentPromiseReject = null;
+        }
     }
 
     /* Execute a function when someone writes in the text field: */
@@ -633,7 +656,7 @@ export interface ByRectOptions {
     lat2: number;
 }
 
-
+export type Operation = 'select' | 'suggestions' | 'focus' | 'blur';
 export type LocationType = 'country' | 'state' | 'city' | 'postcode' | 'street' | 'amenity';
 export type SupportedLanguage = "ab" | "aa" | "af" | "ak" | "sq" | "am" | "ar" | "an" | "hy" | "as" | "av" | "ae" | "ay" | "az" | "bm" | "ba" | "eu" | "be" | "bn" | "bh" | "bi" | "bs" | "br" | "bg" | "my" | "ca" | "ch" | "ce" | "ny" | "zh" | "cv" | "kw" | "co" | "cr" | "hr" | "cs" | "da" | "dv" | "nl" | "en" | "eo" | "et" | "ee" | "fo" | "fj" | "fi" | "fr" | "ff" | "gl" | "ka" | "de" | "el" | "gn" | "gu" | "ht" | "ha" | "he" | "hz" | "hi" | "ho" | "hu" | "ia" | "id" | "ie" | "ga" | "ig" | "ik" | "io" | "is" | "it" | "iu" | "ja" | "jv" | "kl" | "kn" | "kr" | "ks" | "kk" | "km" | "ki" | "rw" | "ky" | "kv" | "kg" | "ko" | "ku" | "kj" | "la" | "lb" | "lg" | "li" | "ln" | "lo" | "lt" | "lu" | "lv" | "gv" | "mk" | "mg" | "ms" | "ml" | "mt" | "mi" | "mr" | "mh" | "mn" | "na" | "nv" | "nb" | "nd" | "ne" | "ng" | "nn" | "no" | "ii" | "nr" | "oc" | "oj" | "cu" | "om" | "or" | "os" | "pa" | "pi" | "fa" | "pl" | "ps" | "pt" | "qu" | "rm" | "rn" | "ro" | "ru" | "sa" | "sc" | "sd" | "se" | "sm" | "sg" | "sr" | "gd" | "sn" | "si" | "sk" | "sl" | "so" | "st" | "es" | "su" | "sw" | "ss" | "sv" | "ta" | "te" | "tg" | "th" | "ti" | "bo" | "tk" | "tl" | "tn" | "to" | "tr" | "ts" | "tt" | "tw" | "ty" | "ug" | "uk" | "ur" | "uz" | "ve" | "vi" | "vo" | "wa" | "cy" | "wo" | "fy" | "xh" | "yi" | "yo" | "za";
 export type CountyCode = "none" | "auto" | "ad" | "ae" | "af" | "ag" | "ai" | "al" | "am" | "an" | "ao" | "ap" | "aq" | "ar" | "as" | "at" | "au" | "aw" | "az" | "ba" | "bb" | "bd" | "be" | "bf" | "bg" | "bh" | "bi" | "bj" | "bm" | "bn" | "bo" | "br" | "bs" | "bt" | "bv" | "bw" | "by" | "bz" | "ca" | "cc" | "cd" | "cf" | "cg" | "ch" | "ci" | "ck" | "cl" | "cm" | "cn" | "co" | "cr" | "cu" | "cv" | "cx" | "cy" | "cz" | "de" | "dj" | "dk" | "dm" | "do" | "dz" | "ec" | "ee" | "eg" | "eh" | "er" | "es" | "et" | "eu" | "fi" | "fj" | "fk" | "fm" | "fo" | "fr" | "ga" | "gb" | "gd" | "ge" | "gf" | "gh" | "gi" | "gl" | "gm" | "gn" | "gp" | "gq" | "gr" | "gs" | "gt" | "gu" | "gw" | "gy" | "hk" | "hm" | "hn" | "hr" | "ht" | "hu" | "id" | "ie" | "il" | "in" | "io" | "iq" | "ir" | "is" | "it" | "jm" | "jo" | "jp" | "ke" | "kg" | "kh" | "ki" | "km" | "kn" | "kp" | "kr" | "kw" | "ky" | "kz" | "la" | "lb" | "lc" | "li" | "lk" | "lr" | "ls" | "lt" | "lu" | "lv" | "ly" | "ma" | "mc" | "md" | "me" | "mg" | "mh" | "mk" | "ml" | "mm" | "mn" | "mo" | "mp" | "mq" | "mr" | "ms" | "mt" | "mu" | "mv" | "mw" | "mx" | "my" | "mz" | "na" | "nc" | "ne" | "nf" | "ng" | "ni" | "nl" | "no" | "np" | "nr" | "nu" | "nz" | "om" | "pa" | "pe" | "pf" | "pg" | "ph" | "pk" | "pl" | "pm" | "pr" | "ps" | "pt" | "pw" | "py" | "qa" | "re" | "ro" | "rs" | "ru" | "rw" | "sa" | "sb" | "sc" | "sd" | "se" | "sg" | "sh" | "si" | "sj" | "sk" | "sl" | "sm" | "sn" | "so" | "sr" | "st" | "sv" | "sy" | "sz" | "tc" | "td" | "tf" | "tg" | "th" | "tj" | "tk" | "tm" | "tn" | "to" | "tr" | "tt" | "tv" | "tw" | "tz" | "ua" | "ug" | "um" | "us" | "uy" | "uz" | "va" | "vc" | "ve" | "vg" | "vi" | "vn" | "vu" | "wf" | "ws" | "ye" | "yt" | "za" | "zm" | "zw";
