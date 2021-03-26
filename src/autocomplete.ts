@@ -182,7 +182,7 @@ export class GeocoderAutocomplete {
             this.focusChangeCallbacks.splice(this.focusChangeCallbacks.indexOf(callback), 1);
         }
 
-        if (operation === 'blur' && this.focusChangeCallbacks.indexOf(callback) < 0) {
+        if (operation === 'blur' && this.blurChangeCallbacks.indexOf(callback) < 0) {
             this.blurChangeCallbacks.splice(this.blurChangeCallbacks.indexOf(callback), 1);
         }
     }
@@ -193,6 +193,15 @@ export class GeocoderAutocomplete {
 
     onUserBlur() {
         this.blurChangeCallbacks.forEach(callback => callback());
+
+        // Close the dropdown and stop the previous request
+        this.closeDropDownList();
+        if (this.currentPromiseReject) {
+            this.currentPromiseReject({
+                canceled: true
+            });
+            this.currentPromiseReject = null;
+        }
     }
 
     /* Execute a function when someone writes in the text field: */
